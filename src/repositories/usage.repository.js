@@ -1,6 +1,15 @@
-const { pool } = require('../config/database');
+async function findUsageEventByIdempotencyKey(client, tenantId, idempotencyKey) {
+  const result = await client.query(`
+    SELECT id, usage_type, quantity
+    FROM usage_events
+    WHERE tenant_id = $1 AND idempotency_key = $2
+  `, [tenantId, idempotencyKey]);
+
+  return result.rows[0] || null;
+}
 
 async function insertUsageEvent({
+  client,
   tenantId,
   idempotencyKey,
   usageType,
@@ -25,7 +34,7 @@ async function insertUsageEvent({
     billingPeriodEnd
   ];
 
-  const inserted = await pool.query(`
+  const inserted = await client.query(`
     INSERT INTO usage_events (
       tenant_id,
       idempotency_key,
@@ -47,17 +56,13 @@ async function insertUsageEvent({
     return inserted.rows[0];
   }
 
-  const existing = await pool.query(`
-    SELECT id, usage_type, quantity
-    FROM usage_events
-    WHERE tenant_id = $1 AND idempotency_key = $2
-  `, [tenantId, idempotencyKey]);
+  const existing = await findUsageEventByIdempotencyKey(client, tenantId, idempotencyKey);
 
-  if (existing.rows.length === 0) {
+  if (!existing) {
     throw new Error('Usage event was not inserted or found');
   }
 
-  return existing.rows[0];
+  return existing;
 }
 
-module.exports = { insertUsageEvent };
+module.exports = { findUsageEventByIdempotencyKey, insertUsageEvent };

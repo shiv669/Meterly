@@ -160,6 +160,25 @@ AI token example:
 
 The request path is authentication, boundary validation, `MeterService`, `UsageRepository`, and PostgreSQL. Reusing the same idempotency key for the same tenant returns the original event result without inserting another usage event. Quota transactions and cost calculation are deliberately part of the next milestones.
 
+## Quota Enforcement
+
+Usage recording now checks the authenticated tenant's active subscription and plan limit inside the same PostgreSQL transaction as the usage insert.
+
+```text
+BEGIN
+	find existing idempotency event
+	lock tenant row FOR UPDATE
+	read subscription and plan
+	aggregate current billing-period usage
+	reject if projected usage exceeds the limit
+	insert usage event
+COMMIT
+```
+
+The tenant-row lock serializes concurrent usage decisions for one tenant. Different tenants can continue independently. A quota violation returns `429`; a missing or inactive subscription returns `402`.
+
+The verified Free-plan boundary is 1,000 API calls: usage at exactly 1,000 is allowed, the next call is rejected, and two simultaneous requests at 999 result in one success and one `429`, with final usage equal to 1,000.
+
 ## Stripe Test Mode
 
 Stripe configuration is supplied through environment variables and is never committed:
@@ -198,6 +217,6 @@ Invalid signatures return `400`, and replayed valid events are acknowledged with
 - Quota enforcement and cost calculation are not implemented yet.
 - Production authentication is not implemented yet; the current token is development-only.
 - Stripe Checkout and webhook handling are not implemented yet.
-- Quota transactions and cost calculation will be implemented in the service layer.
+- Cost calculation is not implemented yet.
 - Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
 - The demo seed uses a local tenant and test data only.

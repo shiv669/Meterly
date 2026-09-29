@@ -85,6 +85,21 @@ Stripe integration is now verified against Stripe Test Mode rather than only syn
 
 The Checkout success URL currently returns `404` because a success page is not implemented; Stripe payment and webhook processing completed successfully before that redirect.
 
+## Entry 6: Transactional Quota Enforcement
+
+Added `QuotaService` and `QuotaRepository` and changed `MeterService` to coordinate idempotency, quota checks, and usage insertion inside one PostgreSQL transaction.
+
+The transaction locks the tenant row with `FOR UPDATE`, reads the active subscription and plan limits, aggregates usage for the current billing period, rejects projected over-limit usage with `429`, and inserts the event only when allowed. Inactive subscriptions return `402`.
+
+Verified the Free-plan API-call boundary:
+
+- `999 + 1` returned `201` and reached exactly `1000`.
+- `1000 + 1` returned `429`.
+- `999 + 2` returned `429`.
+- Two concurrent `999 + 1` requests returned one `201` and one `429`, with final usage `1000`.
+
+The implementation intentionally does not add cost calculation or usage reporting yet.
+
 ## Lessons and Decisions
 
 The Stripe webhook endpoint receives the raw request body before Express JSON parsing because signature verification depends on the exact payload.
