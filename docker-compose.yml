@@ -17,6 +17,26 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meterly-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-meterly}
+      DB_USER: ${POSTGRES_USER:-meterly}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-meterly_dev_password}
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   nginx:
     image: nginx:stable-alpine
     container_name: meterly-nginx

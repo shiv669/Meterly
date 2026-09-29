@@ -107,9 +107,30 @@ NGINX is exposed at `http://localhost:8080` and forwards requests to the planned
 
 The remaining implementation phases are metering and quota enforcement, usage reporting and cost calculation, payment integration, background processing, and acceptance evidence.
 
+## Health Check
+
+The first live request path is:
+
+```text
+GET http://localhost:8080/health
+	-> NGINX
+	-> Express
+	-> PostgreSQL SELECT 1
+```
+
+Expected response:
+
+```json
+{
+	"status": "ok",
+	"database": "connected"
+}
+```
+
 ## Current Limitations
 
-- The HTTP API and authentication layer are not implemented yet.
+- Only the health endpoint is implemented in the HTTP API.
+- Authentication and tenant identification are not implemented yet.
 - Stripe Checkout and webhook handling are not implemented yet.
 - Quota transactions and cost calculation will be implemented in the service layer.
 - The demo seed uses a local tenant and test data only.
