@@ -81,6 +81,8 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-meterly_dev_password}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
       AI_WORKER_MAX_ATTEMPTS: ${AI_WORKER_MAX_ATTEMPTS:-3}
       AI_WORKER_POLL_INTERVAL_MS: ${AI_WORKER_POLL_INTERVAL_MS:-1000}
     depends_on:

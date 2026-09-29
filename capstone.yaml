@@ -1,0 +1,12 @@
+run: docker compose up -d
+seed: npm run db:seed
+test: npm test
+base_url: http://localhost:8080
+endpoints:
+  - GET /health
+  - POST /api/usage
+  - GET /api/usage
+  - POST /api/billing/checkout
+  - POST /api/webhooks/stripe
+  - POST /api/ai/generate
+  - GET /api/ai/jobs/:jobId

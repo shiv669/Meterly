@@ -1,5 +1,5 @@
 const { pool } = require('../src/config/database');
-const { generate } = require('../src/providers/openai.provider');
+const { generate } = require('../src/providers/groq.provider');
 const { calculate } = require('../src/services/cost.service');
 const aiJobRepository = require('../src/repositories/ai-job.repository');
 const { insertUsageEvent } = require('../src/repositories/usage.repository');
