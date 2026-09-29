@@ -1,4 +1,7 @@
-const { lockTenantAndGetQuota } = require('../repositories/quota.repository');
+const {
+  lockTenantAndGetQuota,
+  lockTenantAndGetAiReservationState
+} = require('../repositories/quota.repository');
 
 function createQuotaError(message, statusCode) {
   const error = new Error(message);
@@ -39,4 +42,25 @@ async function checkAndLock({ client, tenantId, usageType, requestedQuantity }) 
   };
 }
 
-module.exports = { checkAndLock };
+async function reserveAiTokens({ client, tenantId, requestedTokens }) {
+  const quota = await lockTenantAndGetAiReservationState(client, tenantId);
+
+  if (!quota || !['active', 'trialing'].includes(quota.status)) {
+    throw createQuotaError('An active subscription is required', 402);
+  }
+
+  const projectedUsage = quota.aiTokensUsed + quota.aiTokensReserved + requestedTokens;
+  if (projectedUsage > quota.aiTokenLimit) {
+    throw createQuotaError(
+      `AI token quota exceeded: ${quota.aiTokensUsed + quota.aiTokensReserved}/${quota.aiTokenLimit} reserved, requested ${requestedTokens}`,
+      429
+    );
+  }
+
+  return {
+    billingPeriodStart: quota.billingPeriodStart,
+    billingPeriodEnd: quota.billingPeriodEnd
+  };
+}
+
+module.exports = { checkAndLock, reserveAiTokens };

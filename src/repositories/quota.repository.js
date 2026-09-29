@@ -43,4 +43,60 @@ async function lockTenantAndGetQuota(client, tenantId) {
   };
 }
 
-module.exports = { lockTenantAndGetQuota };
+async function lockTenantAndGetAiReservationState(client, tenantId) {
+  const subscriptionResult = await client.query(`
+    SELECT
+      s.status,
+      s.current_period_start,
+      s.current_period_end,
+      p.ai_token_limit
+    FROM tenants t
+    JOIN subscriptions s ON s.tenant_id = t.id
+    JOIN plans p ON p.id = s.plan_id
+    WHERE t.id = $1
+    FOR UPDATE OF t
+  `, [tenantId]);
+
+  if (subscriptionResult.rows.length === 0) {
+    return null;
+  }
+
+  const subscription = subscriptionResult.rows[0];
+  const usageResult = await client.query(`
+    SELECT
+      COALESCE((
+        SELECT SUM(quantity)
+        FROM usage_events
+        WHERE tenant_id = $1
+          AND usage_type = 'ai_tokens'
+          AND billing_period_start >= $2::date
+          AND billing_period_end <= $3::date
+      ), 0) AS ai_tokens_used,
+      COALESCE((
+        SELECT SUM(reserved_tokens)
+        FROM ai_jobs
+        WHERE tenant_id = $1
+          AND status IN ('queued', 'processing')
+          AND created_at >= $2
+          AND created_at < $3
+      ), 0) AS ai_tokens_reserved
+  `, [
+    tenantId,
+    subscription.current_period_start,
+    subscription.current_period_end
+  ]);
+
+  return {
+    status: subscription.status,
+    billingPeriodStart: subscription.current_period_start,
+    billingPeriodEnd: subscription.current_period_end,
+    aiTokenLimit: Number(subscription.ai_token_limit),
+    aiTokensUsed: Number(usageResult.rows[0].ai_tokens_used),
+    aiTokensReserved: Number(usageResult.rows[0].ai_tokens_reserved)
+  };
+}
+
+module.exports = {
+  lockTenantAndGetQuota,
+  lockTenantAndGetAiReservationState
+};

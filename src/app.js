@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const stripeRoutes = require('./routes/stripe.routes');
 const healthRoutes = require('./routes/health.routes');
 const usageRoutes = require('./routes/usage.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(stripeRoutes);
 app.use(express.json());
 app.use(healthRoutes);
 app.use(usageRoutes);
+app.use(aiRoutes);
 
 app.use((error, _request, response, _next) => {
   console.error(error);

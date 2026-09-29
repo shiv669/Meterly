@@ -114,3 +114,32 @@ Tests 8 passed
 ```
 
 The retry policy recovered after transient failures using exponential backoff and surfaced the final error after the maximum attempt count.
+
+## AI Gateway
+
+Enqueue and idempotency:
+
+```text
+POST /api/ai/generate -> 202
+Retry with same tenant and Idempotency-Key -> same job id, 202
+Database rows for the key -> 1
+```
+
+Quota-before-provider:
+
+```text
+AI usage before request: 100,000 / 100,000
+POST /api/ai/generate -> 429
+Queued or processing jobs for rejected key -> 0
+```
+
+Worker failure safety:
+
+```text
+OPENAI_API_KEY unavailable
+AI worker attempts -> 1
+Job status -> failed
+Usage events for job -> 0
+```
+
+Real OpenAI token extraction and completion-cost verification remain pending an `OPENAI_API_KEY` test configuration.

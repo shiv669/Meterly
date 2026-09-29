@@ -205,6 +205,34 @@ It retrieves each stored Stripe subscription, compares the Stripe plan, status, 
 
 The worker is idempotent: a second run writes the same Stripe state and does not count a tenant as reconciled when no drift exists. The webhook remains the fast synchronization path; reconciliation is the asynchronous recovery path.
 
+## AI Gateway
+
+The AI gateway creates durable jobs before contacting the provider:
+
+```http
+POST /api/ai/generate
+Authorization: Bearer demo-token
+Idempotency-Key: ai-request-1
+Content-Type: application/json
+
+{
+	"prompt": "Explain quantum computing in simple words",
+	"maxOutputTokens": 256
+}
+```
+
+The response is `202 Accepted` with a queued `jobId`. Retrieve the tenant-scoped result with `GET /api/ai/jobs/:jobId`.
+
+AI quota is reserved before enqueueing, including queued and processing jobs. The AI worker claims jobs with row locking, calls the configured OpenAI provider, records actual provider token usage and integer cost, and marks the job completed in one database transaction. Provider failures retry and eventually mark the job failed without creating a usage event.
+
+Run one AI worker pass manually with:
+
+```powershell
+npm run worker:ai:once
+```
+
+Set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in `.env` for real provider execution. Local verification covers enqueueing, idempotency, quota-before-provider rejection, and missing-key failure safety; a real OpenAI request remains pending an API key.
+
 ## Stripe Test Mode
 
 Stripe configuration is supplied through environment variables and is never committed:
@@ -245,5 +273,6 @@ Invalid signatures return `400`, and replayed valid events are acknowledged with
 - Stripe Checkout and webhook handling are not implemented yet.
 - Stripe success and cancel pages are not implemented yet.
 - The worker currently runs once at container startup and then on its configured daily interval; external alert delivery is intentionally not included.
+- A real OpenAI provider request requires `OPENAI_API_KEY`; synthetic provider responses are not used as a substitute.
 - Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
 - The demo seed uses a local tenant and test data only.

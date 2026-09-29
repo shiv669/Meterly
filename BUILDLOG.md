@@ -120,6 +120,20 @@ Real verification used the existing Stripe test subscription: the database had d
 
 A second run checked one tenant, reconciled zero tenants, and recorded zero failures, proving repeat-run idempotence. Retry tests verified recovery after transient failures and final failure after the configured attempt limit.
 
+## Entry 9: Production AI Gateway
+
+Added durable `ai_jobs` with tenant-scoped idempotency, quota reservations for queued and processing jobs, `POST /api/ai/generate`, and `GET /api/ai/jobs/:jobId`.
+
+Added an OpenAI provider adapter and a separate AI worker. The worker claims jobs with row locking, recovers stale processing jobs, retries provider failures, and atomically records provider usage plus cost with job completion.
+
+Verified:
+
+- Duplicate AI requests returned the same queued job and created one `ai_jobs` row.
+- A full Free-plan AI quota returned `429` before a job was created.
+- A missing provider key marked the job `failed` without creating a usage event.
+
+Real OpenAI execution is not yet verified because `OPENAI_API_KEY` is not configured in the environment. The provider adapter is ready for the real-key verification pass.
+
 ## Lessons and Decisions
 
 The Stripe webhook endpoint receives the raw request body before Express JSON parsing because signature verification depends on the exact payload.

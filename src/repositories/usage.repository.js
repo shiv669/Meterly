@@ -20,6 +20,7 @@ async function insertUsageEvent({
   cachedInputTokens,
   outputTokens,
   reasoningTokens,
+  costMicrounits = 0,
   billingPeriodStart,
   billingPeriodEnd
 }) {
@@ -46,13 +47,18 @@ async function insertUsageEvent({
       cached_input_tokens,
       output_tokens,
       reasoning_tokens,
+      cost_microunits,
       billing_period_start,
       billing_period_end
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     ON CONFLICT (tenant_id, idempotency_key) DO NOTHING
     RETURNING id, usage_type, quantity
-  `, values);
+  `, [
+    ...values.slice(0, 8),
+    costMicrounits,
+    ...values.slice(8)
+  ]);
 
   if (inserted.rows.length > 0) {
     return inserted.rows[0];
