@@ -110,6 +110,16 @@ Cached input tokens are recorded independently from fresh input tokens. Reasonin
 
 Verified six focused pricing cases and a four-event integration report. The report returned 42,000 AI tokens and 36,300,000 microcents, matching the exact expected calculation. Evidence is recorded in `EVIDENCE.md`.
 
+## Entry 8: Stripe Reconciliation Worker
+
+Added a separate background worker with a manual `npm run worker:reconcile` command and a daily Docker Compose service.
+
+Added `reconciliation_runs` persistence, Stripe subscription comparison, idempotent state repair, exponential retry handling, structured failure logging, and worker container configuration.
+
+Real verification used the existing Stripe test subscription: the database had drifted to Free/active while Stripe reported Pro/canceled. The first worker run repaired the plan and status, checked one tenant, reconciled one tenant, and recorded zero failures.
+
+A second run checked one tenant, reconciled zero tenants, and recorded zero failures, proving repeat-run idempotence. Retry tests verified recovery after transient failures and final failure after the configured attempt limit.
+
 ## Lessons and Decisions
 
 The Stripe webhook endpoint receives the raw request body before Express JSON parsing because signature verification depends on the exact payload.

@@ -42,6 +42,29 @@ services:
       postgres:
         condition: service_healthy
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meterly-worker
+    restart: unless-stopped
+    command: ["node", "worker/index.js"]
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-meterly}
+      DB_USER: ${POSTGRES_USER:-meterly}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-meterly_dev_password}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-}
+      WORKER_MAX_ATTEMPTS: ${WORKER_MAX_ATTEMPTS:-3}
+      WORKER_RETRY_BASE_DELAY_MS: ${WORKER_RETRY_BASE_DELAY_MS:-1000}
+      WORKER_INTERVAL_MS: ${WORKER_INTERVAL_MS:-86400000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   nginx:
     image: nginx:stable-alpine
     container_name: meterly-nginx

@@ -193,6 +193,18 @@ Pricing is pinned in [src/config/pricing.js](src/config/pricing.js) using microc
 
 The response includes plan limits, current-period usage, remaining quota, token breakdown, and exact integer cost. See [EVIDENCE.md](EVIDENCE.md) for the pinned test results and the `GET /api/usage` integration proof.
 
+## Stripe Reconciliation Worker
+
+The worker is a separate Compose service and can also be run manually:
+
+```powershell
+npm run worker:reconcile
+```
+
+It retrieves each stored Stripe subscription, compares the Stripe plan, status, customer, and billing period with PostgreSQL, and repairs drift. Each tenant reconciliation retries up to three times with exponential backoff. Failures are written as structured logs and recorded in `reconciliation_runs`.
+
+The worker is idempotent: a second run writes the same Stripe state and does not count a tenant as reconciled when no drift exists. The webhook remains the fast synchronization path; reconciliation is the asynchronous recovery path.
+
 ## Stripe Test Mode
 
 Stripe configuration is supplied through environment variables and is never committed:
@@ -232,5 +244,6 @@ Invalid signatures return `400`, and replayed valid events are acknowledged with
 - Production authentication is not implemented yet; the current token is development-only.
 - Stripe Checkout and webhook handling are not implemented yet.
 - Stripe success and cancel pages are not implemented yet.
+- The worker currently runs once at container startup and then on its configured daily interval; external alert delivery is intentionally not included.
 - Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
 - The demo seed uses a local tenant and test data only.

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "worker:reconcile": "node worker/index.js --once",
     "db:migrate": "node database/run-migrations.js",
     "db:seed": "node database/seed.js",
     "db:setup": "npm run db:migrate && npm run db:seed",

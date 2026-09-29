@@ -79,3 +79,38 @@ Expected calculation:
 ```
 
 Result: PASS. PostgreSQL aggregation and `GET /api/usage` agree with `CostService`.
+
+## Background Worker
+
+Command:
+
+```text
+npm run worker:reconcile
+```
+
+Real Stripe drift test:
+
+```text
+Database before: Free / active
+Stripe state: Pro / canceled
+Worker result: tenantsChecked=1, tenantsReconciled=1, failures=0
+Database after: Pro / canceled
+```
+
+Repeat-run test:
+
+```text
+Second worker result: tenantsChecked=1, tenantsReconciled=0, failures=0
+```
+
+The worker repaired the subscription from Stripe state and made no unnecessary update on the second run.
+
+Retry tests:
+
+```text
+npx vitest run
+Test Files 2 passed
+Tests 8 passed
+```
+
+The retry policy recovered after transient failures using exponential backoff and surfaced the final error after the maximum attempt count.

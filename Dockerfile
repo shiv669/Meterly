@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY src ./src
+COPY worker ./worker
 
 ENV NODE_ENV=production
 EXPOSE 3000
