@@ -160,10 +160,44 @@ AI token example:
 
 The request path is authentication, boundary validation, `MeterService`, `UsageRepository`, and PostgreSQL. Reusing the same idempotency key for the same tenant returns the original event result without inserting another usage event. Quota transactions and cost calculation are deliberately part of the next milestones.
 
+## Stripe Test Mode
+
+Stripe configuration is supplied through environment variables and is never committed:
+
+```text
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRO_PRICE_ID=price_...
+```
+
+Create a Pro Checkout session with:
+
+```http
+POST /api/billing/checkout
+Authorization: Bearer demo-token
+```
+
+The tenant identity comes from authentication and is attached to the Checkout session metadata. Creating a Checkout session does not upgrade the tenant. The subscription changes only after a verified Stripe webhook.
+
+Forward local Stripe test webhooks with:
+
+```powershell
+stripe listen --forward-to localhost:8080/api/webhooks/stripe
+```
+
+The webhook endpoint receives the raw request body before JSON parsing, verifies the Stripe signature, deduplicates provider event ids, and handles:
+
+- `checkout.session.completed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+Invalid signatures return `400`, and replayed valid events are acknowledged without repeating subscription changes.
+
 ## Current Limitations
 
 - Quota enforcement and cost calculation are not implemented yet.
 - Production authentication is not implemented yet; the current token is development-only.
 - Stripe Checkout and webhook handling are not implemented yet.
 - Quota transactions and cost calculation will be implemented in the service layer.
+- Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
 - The demo seed uses a local tenant and test data only.
