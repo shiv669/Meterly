@@ -2,7 +2,7 @@
 
 Usage Metering & Billing Engine for the FlyRank Backend Track capstone.
 
-The current implementation milestone is the PostgreSQL database foundation. The application layer will be added on top of this contract.
+The current implementation includes the PostgreSQL foundation and the first usage-metering endpoint. The application layer is being built incrementally on top of this contract.
 
 ## Database Setup
 
@@ -103,7 +103,7 @@ Client -> NGINX -> Express -> Services -> Repositories -> PostgreSQL
 
 NGINX is part of the Meterly repository but runs as a separate Docker Compose service. Its configuration lives in `nginx/nginx.conf`; it does not belong inside the Express application code.
 
-NGINX is exposed at `http://localhost:8080` and forwards requests to the planned `meterly-api:3000` service over the Compose network. NGINX can start before the API container exists because Docker DNS resolution is deferred until a request arrives. Until the Express service is added, requests through port `8080` are expected to return `502 Bad Gateway`.
+NGINX is exposed at `http://localhost:8080` and forwards requests to the `meterly-api:3000` service over the Compose network.
 
 The remaining implementation phases are metering and quota enforcement, usage reporting and cost calculation, payment integration, background processing, and acceptance evidence.
 
@@ -127,10 +127,43 @@ Expected response:
 }
 ```
 
+## Usage Metering Endpoint
+
+The first business endpoint uses a temporary development token mapped to the seeded demo tenant:
+
+```http
+POST /api/usage
+Authorization: Bearer demo-token
+Idempotency-Key: usage-request-1
+Content-Type: application/json
+```
+
+API call example:
+
+```json
+{
+	"usageType": "api_call",
+	"quantity": 1
+}
+```
+
+AI token example:
+
+```json
+{
+	"usageType": "ai_tokens",
+	"inputTokens": 5000,
+	"cachedInputTokens": 2000,
+	"outputTokens": 1000
+}
+```
+
+The request path is authentication, boundary validation, `MeterService`, `UsageRepository`, and PostgreSQL. Reusing the same idempotency key for the same tenant returns the original event result without inserting another usage event. Quota transactions and cost calculation are deliberately part of the next milestones.
+
 ## Current Limitations
 
-- Only the health endpoint is implemented in the HTTP API.
-- Authentication and tenant identification are not implemented yet.
+- Quota enforcement and cost calculation are not implemented yet.
+- Production authentication is not implemented yet; the current token is development-only.
 - Stripe Checkout and webhook handling are not implemented yet.
 - Quota transactions and cost calculation will be implemented in the service layer.
 - The demo seed uses a local tenant and test data only.
