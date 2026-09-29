@@ -1,9 +1,28 @@
+const { pool } = require('../config/database');
+
 async function findSubscriptionByTenant(client, tenantId) {
   const result = await client.query(`
     SELECT id, tenant_id, plan_id, provider_customer_id, provider_subscription_id,
            status, current_period_start, current_period_end
     FROM subscriptions
     WHERE tenant_id = $1
+  `, [tenantId]);
+
+  return result.rows[0] || null;
+}
+
+async function getSubscriptionForTenant(tenantId) {
+  const result = await pool.query(`
+    SELECT
+      s.status,
+      s.current_period_start,
+      s.current_period_end,
+      p.name AS plan_name,
+      p.api_call_limit,
+      p.ai_token_limit
+    FROM subscriptions s
+    JOIN plans p ON p.id = s.plan_id
+    WHERE s.tenant_id = $1
   `, [tenantId]);
 
   return result.rows[0] || null;
@@ -105,6 +124,7 @@ async function updateSubscriptionStatus(client, {
 
 module.exports = {
   findSubscriptionByTenant,
+  getSubscriptionForTenant,
   findPlanByCode,
   findTenantByProviderSubscription,
   upsertSubscription,

@@ -100,6 +100,16 @@ Verified the Free-plan API-call boundary:
 
 The implementation intentionally does not add cost calculation or usage reporting yet.
 
+## Entry 7: Cost Calculation and Usage Reporting
+
+Added pinned integer pricing in `src/config/pricing.js` and isolated money calculation in `CostService`.
+
+Added PostgreSQL monthly aggregation through the tenant subscription period and implemented authenticated `GET /api/usage`.
+
+Cached input tokens are recorded independently from fresh input tokens. Reasoning tokens remain auditable in their own column and are priced once as output tokens.
+
+Verified six focused pricing cases and a four-event integration report. The report returned 42,000 AI tokens and 36,300,000 microcents, matching the exact expected calculation. Evidence is recorded in `EVIDENCE.md`.
+
 ## Lessons and Decisions
 
 The Stripe webhook endpoint receives the raw request body before Express JSON parsing because signature verification depends on the exact payload.

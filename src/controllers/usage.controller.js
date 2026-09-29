@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const meterService = require('../services/meter.service');
+const usageService = require('../services/usage.service');
 
 const apiCallSchema = z.object({
   usageType: z.literal('api_call'),
@@ -13,15 +14,12 @@ const aiTokensSchema = z.object({
   outputTokens: z.number().int().nonnegative(),
   reasoningTokens: z.number().int().nonnegative().optional().default(0)
 }).strict().superRefine((value, context) => {
-  if (value.cachedInputTokens > value.inputTokens) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['cachedInputTokens'],
-      message: 'cachedInputTokens cannot exceed inputTokens'
-    });
-  }
-
-  if (value.inputTokens + value.outputTokens + value.reasoningTokens === 0) {
+  if (
+    value.inputTokens
+    + value.cachedInputTokens
+    + value.outputTokens
+    + value.reasoningTokens === 0
+  ) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['inputTokens'],
@@ -65,4 +63,13 @@ async function createUsage(request, response, next) {
   }
 }
 
-module.exports = { createUsage };
+async function getUsage(request, response, next) {
+  try {
+    const result = await usageService.getUsage({ tenantId: request.tenantId });
+    response.json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { createUsage, getUsage };

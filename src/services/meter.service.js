@@ -12,7 +12,7 @@ async function record({ tenantId, idempotencyKey, usage }) {
   const reasoningTokens = usage.reasoningTokens || 0;
   const quantity = usage.usageType === 'api_call'
     ? usage.quantity
-    : inputTokens + outputTokens + reasoningTokens;
+    : inputTokens + cachedInputTokens + outputTokens + reasoningTokens;
 
   const client = await pool.connect();
 

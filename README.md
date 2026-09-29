@@ -179,6 +179,20 @@ The tenant-row lock serializes concurrent usage decisions for one tenant. Differ
 
 The verified Free-plan boundary is 1,000 API calls: usage at exactly 1,000 is allowed, the next call is rejected, and two simultaneous requests at 999 result in one success and one `429`, with final usage equal to 1,000.
 
+## Usage Reporting and Cost
+
+`GET /api/usage` aggregates the authenticated tenant's events over the subscription's `current_period_start` and `current_period_end` boundaries. PostgreSQL performs the aggregation; `CostService` performs only integer money calculation.
+
+Pricing is pinned in [src/config/pricing.js](src/config/pricing.js) using microcents:
+
+- API call: `1,000,000` microcents (`$0.01`).
+- Fresh input token: `300` microcents.
+- Cached input token: `30` microcents.
+- Output token: `1,500` microcents.
+- Reasoning tokens are added to output tokens and priced once.
+
+The response includes plan limits, current-period usage, remaining quota, token breakdown, and exact integer cost. See [EVIDENCE.md](EVIDENCE.md) for the pinned test results and the `GET /api/usage` integration proof.
+
 ## Stripe Test Mode
 
 Stripe configuration is supplied through environment variables and is never committed:
@@ -217,6 +231,6 @@ Invalid signatures return `400`, and replayed valid events are acknowledged with
 - Quota enforcement and cost calculation are not implemented yet.
 - Production authentication is not implemented yet; the current token is development-only.
 - Stripe Checkout and webhook handling are not implemented yet.
-- Cost calculation is not implemented yet.
+- Stripe success and cancel pages are not implemented yet.
 - Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
 - The demo seed uses a local tenant and test data only.
