@@ -268,11 +268,8 @@ Invalid signatures return `400`, and replayed valid events are acknowledged with
 
 ## Current Limitations
 
-- Quota enforcement and cost calculation are not implemented yet.
-- Production authentication is not implemented yet; the current token is development-only.
-- Stripe Checkout and webhook handling are not implemented yet.
-- Stripe success and cancel pages are not implemented yet.
-- The worker currently runs once at container startup and then on its configured daily interval; external alert delivery is intentionally not included.
-- A real OpenAI provider request requires `OPENAI_API_KEY`; synthetic provider responses are not used as a substitute.
-- Stripe Test Mode Checkout and webhook forwarding have been verified. Billing success and cancel pages are not implemented yet.
-- The demo seed uses a local tenant and test data only.
+- Authentication is a development-only bearer token. Production JWT or OAuth is not implemented.
+- The dashboard shows aggregated period totals from `GET /api/usage`, not a full per-event audit log (usage events are stored in PostgreSQL but the API does not yet expose a paginated events list endpoint).
+- Billing success and cancel redirect pages return the dashboard SPA; dedicated confirmation pages are not built.
+- The AI worker targets Groq (`openai/gpt-oss-120b`). A real AI provider call requires `GROQ_API_KEY` in `.env`; the worker will mark jobs `failed` without it.
+- Overage billing, proration, invoices, and usage alerts are intentional non-goals for the core build.

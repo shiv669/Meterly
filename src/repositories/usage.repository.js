@@ -2,7 +2,8 @@ const { pool } = require('../config/database');
 
 async function findUsageEventByIdempotencyKey(client, tenantId, idempotencyKey) {
   const result = await client.query(`
-    SELECT id, usage_type, quantity
+    SELECT id, usage_type, quantity,
+           input_tokens, cached_input_tokens, output_tokens, reasoning_tokens
     FROM usage_events
     WHERE tenant_id = $1 AND idempotency_key = $2
   `, [tenantId, idempotencyKey]);

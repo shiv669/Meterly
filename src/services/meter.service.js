@@ -1,5 +1,6 @@
 const { pool } = require('../config/database');
 const quotaService = require('./quota.service');
+const costService = require('./cost.service');
 const {
   findUsageEventByIdempotencyKey,
   insertUsageEvent
@@ -27,10 +28,19 @@ async function record({ tenantId, idempotencyKey, usage }) {
 
     if (existing) {
       await client.query('COMMIT');
+      const existingCost = costService.calculate({
+        apiCalls: existing.usage_type === 'api_call' ? Number(existing.quantity) : 0,
+        inputTokens: Number(existing.input_tokens || 0),
+        cachedInputTokens: Number(existing.cached_input_tokens || 0),
+        outputTokens: Number(existing.output_tokens || 0),
+        reasoningTokens: Number(existing.reasoning_tokens || 0)
+      });
       return {
+        idempotent: true,
         usageEventId: existing.id,
         usageType: existing.usage_type,
-        quantity: Number(existing.quantity)
+        quantity: Number(existing.quantity),
+        cost: existingCost
       };
     }
 
@@ -57,10 +67,20 @@ async function record({ tenantId, idempotencyKey, usage }) {
 
     await client.query('COMMIT');
 
+    const newCost = costService.calculate({
+      apiCalls: usage.usageType === 'api_call' ? quantity : 0,
+      inputTokens,
+      cachedInputTokens,
+      outputTokens,
+      reasoningTokens
+    });
+
     return {
+      idempotent: false,
       usageEventId: event.id,
       usageType: event.usage_type,
-      quantity: Number(event.quantity)
+      quantity: Number(event.quantity),
+      cost: newCost
     };
   } catch (error) {
     await client.query('ROLLBACK');

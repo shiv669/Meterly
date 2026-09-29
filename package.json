@@ -10,7 +10,10 @@
     "db:migrate": "node database/run-migrations.js",
     "db:seed": "node database/seed.js",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "test": "vitest run"
+    "test": "vitest run tests/cost.service.test.js tests/retry.test.js",
+    "test:unit": "vitest run tests/cost.service.test.js tests/retry.test.js",
+    "test:acceptance": "vitest run tests/acceptance.test.js",
+    "test:all": "vitest run"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meterly — Usage Metering &amp; Billing Engine</title>
+  <meta name="description" content="Meterly control dashboard — live usage metering, AI generation, quota enforcement, and Stripe billing." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <span class="brand-name">Meterly</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebarNav" aria-label="Dashboard navigation">
+      <button class="nav-item active" data-target="overview" id="nav-overview">
+        <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Overview</span>
+      </button>
+      <button class="nav-item" data-target="playground" id="nav-playground">
+        <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <span>AI Playground</span>
+      </button>
+      <button class="nav-item" data-target="flow" id="nav-flow">
+        <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+        <span>System Flow</span>
+      </button>
+      <button class="nav-item" data-target="billing" id="nav-billing">
+        <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span>Billing</span>
+      </button>
+      <button class="nav-item" data-target="events" id="nav-events">
+        <svg class="nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>Usage Events</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="conn-badge" id="connectionStatus">
+        <span class="conn-dot"></span>
+        <span class="conn-label">Connecting…</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="main-wrap">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <h1 class="topbar-title" id="pageTitle">Overview</h1>
+      <div class="topbar-right">
+        <div class="tenant-chip">
+          <span class="chip-label">Tenant</span>
+          <span class="chip-value" id="tenantName">—</span>
+          <span class="badge" id="planBadge">—</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pages -->
+    <div class="page-area">
+
+      <!-- ────────────────────────────────────────
+           PAGE: OVERVIEW
+           ──────────────────────────────────────── -->
+      <section class="page page--active" id="page-overview" aria-label="Overview">
+        <div class="page-toolbar">
+          <p class="page-desc">Live usage metrics for the current billing period — all values from <code>GET /api/usage</code>.</p>
+          <button class="btn-ghost" id="btnRefresh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="refreshIcon"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+
+        <!-- Account row -->
+        <div class="info-bar">
+          <div class="info-field">
+            <span class="field-label">Status</span>
+            <span class="badge badge-status" id="statusBadge">—</span>
+          </div>
+          <div class="info-field">
+            <span class="field-label">Billing Period</span>
+            <span class="field-value" id="periodValue">—</span>
+          </div>
+          <div class="info-field">
+            <span class="field-label">Source</span>
+            <span class="field-value"><code>GET /api/usage</code></span>
+          </div>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="metric-grid">
+          <div class="metric-card" id="card-api-calls">
+            <div class="metric-header">
+              <span class="metric-label">API Calls</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="metric-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="metric-value" id="metricApiUsed">—</div>
+            <div class="metric-meta">
+              <span class="metric-remaining" id="metricApiRemaining">—</span>
+              <span class="metric-limit" id="metricApiLimit">—</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progressApiCalls" style="width:0%"></div></div>
+          </div>
+
+          <div class="metric-card" id="card-ai-tokens">
+            <div class="metric-header">
+              <span class="metric-label">AI Tokens</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="metric-icon"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            </div>
+            <div class="metric-value" id="metricTokenUsed">—</div>
+            <div class="metric-meta">
+              <span class="metric-remaining" id="metricTokenRemaining">—</span>
+              <span class="metric-limit" id="metricTokenLimit">—</span>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="progressAiTokens" style="width:0%"></div></div>
+          </div>
+
+          <div class="metric-card" id="card-cost">
+            <div class="metric-header">
+              <span class="metric-label">Estimated Cost</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="metric-icon"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="metric-value" id="metricCostTotal">—</div>
+            <div class="cost-breakdown" id="costBreakdown">
+              <div class="cost-row"><span>API calls</span><span id="costApiCalls">—</span></div>
+              <div class="cost-row"><span>AI tokens</span><span id="costAiTokens">—</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ────────────────────────────────────────
+           PAGE: AI PLAYGROUND
+           ──────────────────────────────────────── -->
+      <section class="page" id="page-playground" aria-label="AI Playground">
+        <div class="page-toolbar">
+          <p class="page-desc">Send a real request through the system. Watch quota, metering, and cost flow end to end.</p>
+          <span class="status-tag">POST /api/ai/generate</span>
+        </div>
+
+        <div class="playground-grid">
+          <!-- Input panel -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Request</span>
+            </div>
+            <div class="panel-body">
+              <div class="form-group">
+                <label class="form-label" for="promptInput">Prompt</label>
+                <textarea id="promptInput" class="form-textarea" rows="6" placeholder="Explain how PostgreSQL SELECT FOR UPDATE prevents race conditions in quota enforcement…"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="idempotencyKeyInput">Idempotency Key</label>
+                <div class="input-row">
+                  <input id="idempotencyKeyInput" class="form-input" type="text" placeholder="req_abc123" />
+                  <button class="btn-square" id="btnGenKey" title="Generate new random key">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-8"/></svg>
+                  </button>
+                </div>
+                <p class="form-hint">Reuse the same key to observe idempotency — same result returned, zero new events written.</p>
+              </div>
+              <button class="btn-primary btn-block" id="btnGenerate">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span id="generateLabel">Generate AI Response</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Result panel -->
+          <div class="panel">
+            <div class="panel-head">
+              <span class="panel-title">Result</span>
+              <!-- Pipeline -->
+              <div class="pipeline" id="pipeline" aria-label="Request pipeline">
+                <div class="pipe-step" id="pipe-queued"><div class="pipe-dot"></div><span>QUEUED</span></div>
+                <span class="pipe-sep">›</span>
+                <div class="pipe-step" id="pipe-processing"><div class="pipe-dot"></div><span>PROCESS</span></div>
+                <span class="pipe-sep">›</span>
+                <div class="pipe-step" id="pipe-provider"><div class="pipe-dot"></div><span>AI</span></div>
+                <span class="pipe-sep">›</span>
+                <div class="pipe-step" id="pipe-metering"><div class="pipe-dot"></div><span>METER</span></div>
+                <span class="pipe-sep">›</span>
+                <div class="pipe-step" id="pipe-done"><div class="pipe-dot"></div><span>DONE</span></div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <!-- Empty state -->
+              <div class="empty-state" id="jobEmpty">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                <p>No request yet</p>
+                <p class="empty-hint">Enter a prompt and click Generate</p>
+              </div>
+
+              <!-- Job result -->
+              <div class="hidden" id="jobResult">
+                <table class="kv-table">
+                  <tr>
+                    <td class="kv-key">Job ID</td>
+                    <td><code class="kv-val" id="jobId">—</code></td>
+                  </tr>
+                  <tr>
+                    <td class="kv-key">Idempotency Key</td>
+                    <td><code class="kv-val" id="jobIdempKey">—</code></td>
+                  </tr>
+                  <tr>
+                    <td class="kv-key">Duplicate</td>
+                    <td class="kv-val" id="jobDuplicate">—</td>
+                  </tr>
+                </table>
+
+                <div class="hidden" id="jobDetail">
+                  <div class="detail-row">
+                    <div class="detail-col">
+                      <p class="section-label">Token Accounting</p>
+                      <table class="detail-table">
+                        <tr><td>Input tokens</td><td id="detailInputTokens">—</td></tr>
+                        <tr><td>Cached input</td><td id="detailCachedTokens">—</td></tr>
+                        <tr><td>Output tokens</td><td id="detailOutputTokens">—</td></tr>
+                        <tr><td>Reasoning tokens</td><td id="detailReasoningTokens">—</td></tr>
+                      </table>
+                    </div>
+                    <div class="detail-col">
+                      <p class="section-label">Cost (microcents)</p>
+                      <table class="detail-table">
+                        <tr><td>Input</td><td id="detailInputCost">—</td></tr>
+                        <tr><td>Cached input</td><td id="detailCachedCost">—</td></tr>
+                        <tr><td>Output + reasoning</td><td id="detailOutputCost">—</td></tr>
+                        <tr class="total-row"><td><strong>Total</strong></td><td id="detailTotalCost">—</td></tr>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div id="aiOutputWrap">
+                    <p class="section-label">AI Response</p>
+                    <div class="output-box" id="aiOutput">—</div>
+                  </div>
+
+                  <div class="hidden" id="errorWrap">
+                    <p class="section-label">Error</p>
+                    <div class="error-box" id="errorMsg">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ────────────────────────────────────────
+           PAGE: SYSTEM FLOW
+           ──────────────────────────────────────── -->
+      <section class="page" id="page-flow" aria-label="System Flow">
+        <div class="page-toolbar">
+          <p class="page-desc">14 stages every AI request passes through. Nodes animate live when a request is in progress.</p>
+          <div class="legend-row">
+            <span class="legend-item is-idle">Idle</span>
+            <span class="legend-item is-active">Active</span>
+            <span class="legend-item is-done">Done</span>
+            <span class="legend-item is-failed">Failed</span>
+          </div>
+        </div>
+
+        <div class="flow-cols" id="systemFlow">
+          <!-- Column 1 -->
+          <div class="flow-col">
+            <div class="flow-node flow-node-idle" id="flow-browser">
+              <div class="node-num">01</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <div class="node-body">
+                <div class="node-name">Browser</div>
+                <div class="node-detail" id="flow-browser-detail">Waiting for request</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-nginx">
+              <div class="node-num">02</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <div class="node-body">
+                <div class="node-name">NGINX :8080</div>
+                <div class="node-detail" id="flow-nginx-detail">Reverse proxy</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-express">
+              <div class="node-num">03</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <div class="node-body">
+                <div class="node-name">Express API</div>
+                <div class="node-detail" id="flow-express-detail">POST /api/ai/generate</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-auth">
+              <div class="node-num">04</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div class="node-body">
+                <div class="node-name">Authentication</div>
+                <div class="node-detail" id="flow-auth-detail">Bearer token validated</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-idempotency">
+              <div class="node-num">05</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+              <div class="node-body">
+                <div class="node-name">Idempotency</div>
+                <div class="node-detail" id="flow-idempotency-detail">Key lookup</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2 -->
+          <div class="flow-col">
+            <div class="flow-node flow-node-idle" id="flow-quota">
+              <div class="node-num">06</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <div class="node-body">
+                <div class="node-name">Quota Check</div>
+                <div class="node-detail" id="flow-quota-detail">SELECT FOR UPDATE</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-db">
+              <div class="node-num">07</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <div class="node-body">
+                <div class="node-name">PostgreSQL</div>
+                <div class="node-detail" id="flow-db-detail">Job row inserted</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-worker">
+              <div class="node-num">08</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+              <div class="node-body">
+                <div class="node-name">AI Worker</div>
+                <div class="node-detail" id="flow-worker-detail">Polling job queue</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-groq">
+              <div class="node-num">09</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <div class="node-body">
+                <div class="node-name">Groq</div>
+                <div class="node-detail" id="flow-groq-detail">Real completion</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-tokens">
+              <div class="node-num">10</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+              <div class="node-body">
+                <div class="node-name">Token Extraction</div>
+                <div class="node-detail" id="flow-tokens-detail">Usage from provider</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3 -->
+          <div class="flow-col">
+            <div class="flow-node flow-node-idle" id="flow-cost">
+              <div class="node-num">11</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <div class="node-body">
+                <div class="node-name">Cost Calculation</div>
+                <div class="node-detail" id="flow-cost-detail">Integer microcents</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-event">
+              <div class="node-num">12</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="node-body">
+                <div class="node-name">Usage Event</div>
+                <div class="node-detail" id="flow-event-detail">Persisted to PostgreSQL</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-complete">
+              <div class="node-num">13</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="node-body">
+                <div class="node-name">Job Completed</div>
+                <div class="node-detail" id="flow-complete-detail">Status updated</div>
+              </div>
+            </div>
+            <div class="flow-vline"></div>
+            <div class="flow-node flow-node-idle" id="flow-dashboard">
+              <div class="node-num">14</div>
+              <svg class="node-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <div class="node-body">
+                <div class="node-name">Dashboard</div>
+                <div class="node-detail" id="flow-dashboard-detail">Poll returned result</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ────────────────────────────────────────
+           PAGE: BILLING
+           ──────────────────────────────────────── -->
+      <section class="page" id="page-billing" aria-label="Billing">
+        <div class="page-toolbar">
+          <p class="page-desc">Plan limits, current entitlement, and Stripe test-mode checkout.</p>
+          <span class="status-tag">Stripe Test Mode</span>
+        </div>
+
+        <div class="billing-body">
+          <div class="plan-grid">
+            <div class="plan-card" id="planFreeCard">
+              <div class="plan-tier-row">
+                <span class="plan-tier">Free</span>
+              </div>
+              <div class="plan-price">$0 <span>/month</span></div>
+              <ul class="plan-features">
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  1,000 API calls / month
+                </li>
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  100,000 AI tokens / month
+                </li>
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Best effort support
+                </li>
+              </ul>
+            </div>
+
+            <div class="plan-card plan-pro-card" id="planProCard">
+              <div class="plan-tier-row">
+                <span class="plan-tier">Pro</span>
+                <span class="pro-badge">Recommended</span>
+              </div>
+              <div class="plan-price">Pro <span>usage tier</span></div>
+              <ul class="plan-features">
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  10,000 API calls / month
+                </li>
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  1,000,000 AI tokens / month
+                </li>
+                <li>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Priority support
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="billing-action-panel">
+            <div class="billing-row">
+              <div>
+                <p class="field-label">Current Plan</p>
+                <strong class="current-plan-name" id="currentPlanLabel">—</strong>
+              </div>
+              <button class="btn-primary" id="btnUpgrade">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><line x1="12" y1="18" x2="12" y2="6"/></svg>
+                <span id="upgradeLabel">Upgrade to Pro</span>
+              </button>
+            </div>
+            <p class="billing-hint">Opens real Stripe Test Checkout. Card: <code>4242 4242 4242 4242</code>, any future expiry, any CVC.</p>
+            <p class="billing-success hidden" id="billingSuccess">
+              Checkout initiated. Complete payment in Stripe, then refresh the dashboard to see the plan update.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ────────────────────────────────────────
+           PAGE: USAGE EVENTS
+           ──────────────────────────────────────── -->
+      <section class="page" id="page-events" aria-label="Usage Events">
+        <div class="page-toolbar">
+          <p class="page-desc">Usage events recorded in PostgreSQL for the current billing period.</p>
+          <button class="btn-ghost" id="btnRefreshEvents">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" id="eventsTable">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Event ID</th>
+                <th>Type</th>
+                <th>Tokens / Qty</th>
+                <th>Cost (µ¢)</th>
+                <th>Idempotency Key</th>
+              </tr>
+            </thead>
+            <tbody id="eventsTableBody">
+              <tr class="table-empty"><td colspan="6">No events yet. Generate a request above.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /.page-area -->
+  </div><!-- /.main-wrap -->
+</div><!-- /.app-shell -->
+
+<div id="toast-container" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

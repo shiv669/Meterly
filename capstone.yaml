@@ -1,9 +1,9 @@
-run: docker compose up -d
-seed: npm run db:seed
-test: npm test
+run: docker compose up --build -d
+seed: node database/run-migrations.js && node database/seed.js
+test: node_modules/.bin/vitest run tests/cost.service.test.js tests/retry.test.js
 base_url: http://localhost:8080
 endpoints:
-  - GET /health
+  - GET /api/health
   - POST /api/usage
   - GET /api/usage
   - POST /api/billing/checkout

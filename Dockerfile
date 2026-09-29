@@ -7,6 +7,7 @@ RUN npm ci --omit=dev
 
 COPY src ./src
 COPY worker ./worker
+COPY database ./database
 
 ENV NODE_ENV=production
 EXPOSE 3000
