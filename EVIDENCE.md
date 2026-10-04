@@ -160,6 +160,32 @@ Usage events for job -> 0
 
 Real OpenAI token extraction and completion-cost verification remain pending an `OPENAI_API_KEY` test configuration.
 
+## Load Testing
+
+The repeatable benchmark harness is `tests/load-test.js`; complete results are recorded in `LOAD_TEST_RESULTS.md`.
+
+Verified local samples:
+
+```text
+1,000 GET /health requests at concurrency 50
+throughput: 300.762 requests/second
+p95: 438.883 ms
+p99: 793.154 ms
+errors: 0%
+
+2,000 GET /health requests at concurrency 100
+throughput: 306.603 requests/second
+p95: 934.719 ms
+p99: 1261.606 ms
+errors: 0%
+
+100 concurrent identical POST /api/usage requests at concurrency 25
+successful responses: 100
+database rows: 1
+double consumption: false
+unique logical responses: 1
+```
+
 ---
 
 ## Probe 1 — Idempotency: same key creates exactly one usage event
